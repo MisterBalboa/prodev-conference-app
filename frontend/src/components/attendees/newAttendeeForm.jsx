@@ -13,7 +13,7 @@ const createAttendee = (eventId, name, email, companyName, hideForm, reloadList)
     reloadList();
   } else {
     for (let error of result.errors) {
-      for (let e of Object.values(error.errors)) {
+      for (let e of Object.values(error)) {
         toast.error(e.message);
       }
     }

@@ -1,0 +1,20 @@
+version: '3'
+services:
+  badges:
+    image: node:15.7.0-buster
+    container_name: badges
+    build:
+      context: ./services/badges
+      dockerfile: Dockerfile
+  auth:
+    image: node:15.7.0-buster
+    container_name: auth
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+  conference:
+    image: node:15.7.0-buster
+    container_name: conference
+    build:
+      context: ./services/conference
+      dockerfile: Dockerfile

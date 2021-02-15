@@ -90,10 +90,12 @@ router.post('/', async ctx => {
     };
   }
 
+  // This is failing with event_id -- there is no unique or exclusion constraint matching the ON CONFLICT specification --
+  // ON CONFLICT (email, event_id)
   await pool.query(`
     INSERT INTO badges (email, name, company_name, role, event_id)
     VALUES ($1, $2, $3, '', $4)
-    ON CONFLICT (email, event_id)
+    ON CONFLICT (email)
     DO NOTHING
   `, [email, name, companyName, eventId]);
 

@@ -3,6 +3,9 @@ import Router from '@koa/router';
 import { authorize, identify } from '../security.mjs';
 
 async function getOneEvent(id, email) {
+
+  // UNNECESSARY ACCOUNT ID JOIN
+
   const { rows } = await pool.query(`
     SELECT e.id, e.name, e.from, e.to, e.description, e.logo_url AS "logoUrl", e.created, e.updated, e.version,
            e.number_of_presentations AS "numberOfPresentations",

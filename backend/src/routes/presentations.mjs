@@ -150,10 +150,11 @@ router.put('/:id/approved', async ctx => {
 
   const { email, presenterName, companyName, title, synopsis } = rows[0];
 
+  // failing on conflict - event_id
   await pool.query(`
     INSERT INTO badges (email, name, company_name, role, event_id)
     VALUES ($1, $2, $3, 'SPEAKER', $4)
-    ON CONFLICT (email, event_id)
+    ON CONFLICT (email)
     DO
     UPDATE SET role = 'SPEAKER'
   `, [email, presenterName, companyName, eventId]);

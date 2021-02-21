@@ -1,20 +1,56 @@
 version: '3'
 services:
-  badges:
+  proxy_manager:
     image: node:15.7.0-buster
+    container_name: proxy_manager
+    build:
+      context: ./services/proxy_manager
+      dockerfile: Dockerfile
+  badges_db:
+    image: postgres
+    restart: always
+    container_name: badges_db
+    build: ./services/badges_db
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_USER: badges_service
+  badges:
+    image: node:current-alpine3.10
     container_name: badges
+    depends_on:
+      - badges_db
     build:
       context: ./services/badges
-      dockerfile: Dockerfile
+    command: ["./wait-for-it.sh"]
+
+  auth_db:
+    image: postgres
+    restart: always
+    container_name: auth_db
+    build: ./services/auth_db
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_USER: auth_service
   auth:
     image: node:15.7.0-buster
     container_name: auth
     build:
       context: ./services/auth
       dockerfile: Dockerfile
+    command: ["./wait-for-it.sh"]
+
+  conference_db:
+    image: postgres
+    restart: always
+    container_name: conference_db
+    build: ./services/conference_db
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_USER: conference_service
   conference:
     image: node:15.7.0-buster
     container_name: conference
     build:
       context: ./services/conference
       dockerfile: Dockerfile
+    command: ["./wait-for-it.sh"]

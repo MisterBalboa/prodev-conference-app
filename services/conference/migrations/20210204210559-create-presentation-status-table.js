@@ -15,43 +15,32 @@ exports.setup = function(options, seedLink) {
 };
 
 exports.up = async function(db) {
-  await db.createTable('badges', {
+  await db.createTable('presentation_statuses', {
     id: {
-      autoIncrement: true,
       notNull: true,
       primaryKey: true,
       type: 'int',
       unsigned: true,
     },
-    email: {
-      length: 100,
+    status: {
+      length: 9,
       notNull: true,
       type: 'string',
-    },
-    name: {
-      notNull: true,
-      type: 'string',
-      length: 100,
-    },
-    company_name: {
-      length: 100,
-      type: 'string',
-    },
-    role: {
-      type: 'string',
-      length: 20,
-    },
-    event_id: {
-      type: 'int',
-      unsigned: true,
-      notNull: true
+      unique: true,
     },
   });
-  return await db.addIndex('badges', 'badges_email_event_id_ux', ['email', 'event_id'], true);
+
+  await db.runSql(`
+    INSERT INTO presentation_statuses(id, status)
+    VALUES
+    (1, 'SUBMITTED'),
+    (2, 'APPROVED'),
+    (3, 'REJECTED');
+  `);
 };
 
 exports.down = function(db) {
-  return db.dropTable('badges');
+  return db.dropTable('presentation_statuses');
 };
 
 exports._meta = {

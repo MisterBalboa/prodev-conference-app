@@ -14,8 +14,8 @@ exports.setup = function(options, seedLink) {
   seed = seedLink;
 };
 
-exports.up = async function(db) {
-  await db.createTable('badges', {
+exports.up = function(db) {
+  return db.createTable('accounts', {
     id: {
       autoIncrement: true,
       notNull: true,
@@ -27,31 +27,38 @@ exports.up = async function(db) {
       length: 100,
       notNull: true,
       type: 'string',
+      unique: true,
     },
-    name: {
+    hashed_password: {
+      length: 100,
       notNull: true,
       type: 'string',
-      length: 100,
     },
-    company_name: {
+    name: {
       length: 100,
+      notNull: true,
       type: 'string',
     },
-    role: {
-      type: 'string',
-      length: 20,
+    created: {
+      notNull: true,
+      type: 'timestamp',
+      defaultValue: new String('CURRENT_TIMESTAMP'),
     },
-    event_id: {
+    updated: {
+      notNull: true,
+      type: 'timestamp',
+      defaultValue: new String('CURRENT_TIMESTAMP'),
+    },
+    version: {
+      notNull: true,
       type: 'int',
-      unsigned: true,
-      notNull: true
+      defaultValue: 1,
     },
   });
-  return await db.addIndex('badges', 'badges_email_event_id_ux', ['email', 'event_id'], true);
 };
 
 exports.down = function(db) {
-  return db.dropTable('badges');
+  return db.dropTable('accounts');
 };
 
 exports._meta = {

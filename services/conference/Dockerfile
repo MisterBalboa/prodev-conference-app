@@ -1,14 +1,7 @@
-FROM node:15.7.0-buster
-WORKDIR /usr/src/conference
-
+FROM node:current-alpine3.10
+WORKDIR /usr/conference
 COPY . .
 
-RUN apt-get install gcc
-RUN npm install -g node-gyp
-RUN apt-get update && apt-get install vim -y
-
-RUN CXX=g++-6 npm install
-
-EXPOSE 80
-CMD [ "npm", "run", "dev" ]
-
+RUN npm install
+RUN apk update && apk add vim
+RUN apk update && apk add curl

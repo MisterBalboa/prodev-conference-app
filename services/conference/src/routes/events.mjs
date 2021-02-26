@@ -1,6 +1,5 @@
 import { pool } from '../db/index.mjs';
 import Router from '@koa/router';
-import { authorize, identify } from '../security.mjs';
 
 async function getOneEvent(id, email) {
 
@@ -55,8 +54,6 @@ export const router = new Router({
   prefix: '/events',
 });
 
-router.use(authorize);
-
 router.get('/', async ctx => {
   const { rows } = await pool.query(`
       SELECT e.id, e.name, e.from, e.to, e.description, e.logo_url AS "logoUrl"
@@ -69,7 +66,7 @@ router.get('/', async ctx => {
   ctx.body = rows;
 });
 
-router.post('/', identify, async ctx => {
+router.post('/', async ctx => {
   const accountId = ctx.claims.id;
   if (!accountId) {
     ctx.status = 401;
@@ -150,7 +147,7 @@ router.delete('/:id', async ctx => {
   ctx.body = event || {};
 });
 
-router.put('/:id', identify, async ctx => {
+router.put('/:id', async ctx => {
   let { name, from, to, description, logoUrl, locationId, version, numberOfPresentations, maximumNumberOfAttendees } = ctx.request.body;
   if (from === '') { from = null; }
   if (to === '') { to = null; }

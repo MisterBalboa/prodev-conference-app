@@ -1,6 +1,5 @@
 import { pool } from '../db/index.mjs';
 import Router from '@koa/router';
-import { authorize } from '../security.mjs';
 import { trimProperty } from '../strings.mjs';
 
 async function selectAll() {
@@ -14,8 +13,6 @@ async function selectAll() {
 export const router = new Router({
   prefix: '/locations',
 });
-
-router.use(authorize);
 
 router.get('/', async ctx => {
   const { rows } = await selectAll();

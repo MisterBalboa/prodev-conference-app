@@ -1,5 +1,7 @@
 import Router from '@koa/router';
 import { router as swaggerRouter } from './swagger.mjs';
+import { router as accountsRouter } from './accounts.mjs';
+import { router as sessionRouter } from './session.mjs';
 import { router as eventsRouter } from './events.mjs';
 import { router as locationsRouter } from './locations.mjs';
 import { router as presentationsRouter } from './presentations.mjs';
@@ -9,6 +11,8 @@ import { router as badgesRouter } from './badges.mjs';
 export const router = new Router();
 
 router.use(swaggerRouter.routes()).use(swaggerRouter.allowedMethods());
+router.use('/api', accountsRouter.routes(), accountsRouter.allowedMethods());
+router.use('/api', sessionRouter.routes(), sessionRouter.allowedMethods());
 router.use('/api', eventsRouter.routes(), eventsRouter.allowedMethods());
 router.use('/api', locationsRouter.routes(), locationsRouter.allowedMethods());
 router.use('/api', presentationsRouter.routes(), presentationsRouter.allowedMethods());

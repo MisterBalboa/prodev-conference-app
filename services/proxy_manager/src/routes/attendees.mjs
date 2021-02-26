@@ -1,14 +1,9 @@
-import { authorize, identify } from '../security.mjs';
-import { pool } from '../db/index.mjs';
 import { trimProperty } from '../strings.mjs';
 import Router from '@koa/router';
 
 export const router = new Router({
   prefix: '/events/:eventId/attendees',
 });
-
-router.use(authorize);
-router.use(identify);
 
 router.get('/', async ctx => {
   const { eventId } = ctx.params;

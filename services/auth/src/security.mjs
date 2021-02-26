@@ -56,7 +56,6 @@ export async function identify(ctx, next) {
     SELECT id FROM accounts WHERE email = $1
   `, [ctx.claims.email]);
   if (rows.length === 1) {
-    ctx.claims.id = rows[0].id;
+    return rows[0].id;
   }
-  await next();
 }

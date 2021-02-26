@@ -1,11 +1,29 @@
+import http from 'http';
 import Router from '@koa/router';
+import axios from 'axios';
 import { trimProperty } from '../strings.mjs';
-
-const DEFAULT_HASH = '$2a$10$QlWNohhjpbGuty6UnyeeJOeKY6dKbiaoFxeWdOoIUiNYaO/ZD2khW';
 
 export const router = new Router({
   prefix: '/accounts',
 });
+
+var postRequest = async function(options, data) {
+  return new Promise(function(resolve, reject) {
+    var result = '';
+    const req = http.request(options, res => {
+      res.on('data', chunk => {
+        result += chunk;
+      });
+
+      res.on('end', endData => {
+        return resolve(JSON.parse(result))
+      });
+    });
+
+    req.write(JSON.stringify(data))
+    req.end()
+  });
+}
 
 router.post('new_account', '/', async ctx => {
   trimProperty(ctx.request.body, 'name');
@@ -28,14 +46,21 @@ router.post('new_account', '/', async ctx => {
 
   let { name, email, password } = ctx.request.body;
   email = email.toLowerCase();
-  const hash = await bcrypt.hash(password || '', 8);
   try {
-    /**************************************/
-    // TODO: CALL TO AUTH SERVICE FOR TOKEN
-    /**************************************/
-    const token = '';
+    const options = {
+      hostname: 'auth',
+      port: '80',
+      path: '/api/accounts',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+    const data = { name, email, password };
+
+    const response = await postRequest(options, data); 
     ctx.status = 201;
-    ctx.body = { token };
+    ctx.body = { token: response.token };
   } catch (e) {
     console.error(e);
     ctx.status = 400;

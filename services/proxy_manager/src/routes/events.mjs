@@ -1,4 +1,5 @@
 import Router from '@koa/router';
+import httpRequest from '../http_client.mjs';
 import { authorize } from '../security.mjs';
 
 async function getOneEvent(id, email) {
@@ -60,22 +61,35 @@ export const router = new Router({
 router.use(authorize);
 
 router.get('/', async ctx => {
-  /********************************************/
-  // TODO: CALL TO conference SERVICE GET events
-  /********************************************/
-  // const { rows } = await pool.query(`
-  //     SELECT e.id, e.name, e.from, e.to, e.description, e.logo_url AS "logoUrl"
-  //     FROM events e
-  //     JOIN accounts a ON(e.account_id = a.id)
-  //     WHERE a.email = $1
-  //   `,
-  //   [ctx.claims.email]
-  // );
-  const rows = [];
-  ctx.body = rows;
+  const options = {
+    hostname: 'conference',
+    port: '80',
+    path: '/api/events?email=' + ctx.claims.email,
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+
+  const events = await httpRequest(options);
+  const filterUserEvents = events.filter(function(e) {
+    console.log('event', e);
+    return e['accountId'] == ctx.claims.id;
+    return expanded;
+  });
+
+  const expandedEvents = filterUserEvents.map(function(e) {
+    return Object.assign(e, ctx.claims);
+  });
+
+  ctx.body = expandedEvents;
 });
 
 router.post('/', async ctx => {
+  console.log('enter post event context', ctx.claims);
+  console.log('CLAIMS: ', ctx.claims);
+  console.log('id: ', ctx.claims.id);
+  console.log('type: ', typeof ctx.claims);
   const accountId = ctx.claims.id;
   if (!accountId) {
     ctx.status = 401;
@@ -88,18 +102,19 @@ router.post('/', async ctx => {
 
   let eventRows = null;
   try {
-    /*********************************************/
-    // TODO: CALL TO conference SERVICE POST event
-    /*********************************************/
-    // const { rows } = await pool.query(`
-    //   INSERT INTO events (name, description, location_id, account_id)
-    //   VALUES ($1, $2, $3, $4)
-    //   RETURNING id, created, updated, version,
-    //             number_of_presentations AS "numberOfPresentations",
-    //             maximum_number_of_attendees AS "maximumNumberOfAttendees"
-    // `, [name, description, locationId, accountId]);
-    // eventRows = rows;
-    eventRows = [];
+    const options = {
+      hostname: 'conference',
+      port: '80',
+      path: '/api/events',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+
+    const response = await httpRequest(options, { name, description, locationId, accountId });
+    console.log('events response', response);
+    eventRows = response;
   } catch (e) {
     console.error(e);
     ctx.status = 400;
@@ -108,15 +123,20 @@ router.post('/', async ctx => {
       message: 'Could not create an event with that location or account.'
     };
   }
-  /***********************************************/
-  // TODO: CALL TO conference SERVICE GET loactions
-  /***********************************************/
-  // const { rows: locationRows } = await pool.query(`
-  //   SELECT l.id, l.name, l.city, l.state, l.maximum_vendor_count as "maximumVendorCount", l.room_count AS "roomCount", created, updated
-  //   FROM locations l
-  //   WHERE l.id = $1
-  // `, [locationId]);
 
+  const options = {
+    hostname: 'conference',
+    port: '80',
+    path: '/api/locations',
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+
+  const locationsRows = await httpRequest(options);
+  console.log('locations rows : ', locationsRows);
+  console.log('event rows: ', eventRows);
   const [{ id, created, updated, version, numberOfPresentations, maximumNumberOfAttendees }] = eventRows;
   ctx.status = 201;
   ctx.body = {
@@ -129,7 +149,7 @@ router.post('/', async ctx => {
     version,
     numberOfPresentations,
     maximumNumberOfAttendees,
-    location: locationRows[0],
+    location: locationsRows[0],
   };
 });
 

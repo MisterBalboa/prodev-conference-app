@@ -12,7 +12,7 @@ var httpRequest = async function(options, data) {
       });
 
       res.on('end', endData => {
-        return resolve(result)
+        return resolve(JSON.parse(result))
       });
     });
 
@@ -56,7 +56,8 @@ export async function authorize(ctx, next) {
       }
 
       const response = await httpRequest(options, { token });
-      ctx.claims = response
+      console.log('auth response ', response);
+      ctx.claims = response;
       await next();
     } catch (e) {
       console.error('INVALID TOKEN!')

@@ -18,8 +18,14 @@ router.post('/', async ctx => {
         SELECT id FROM accounts WHERE email = $1
       `, [ctx.claims.email]);
 
+      console.log('rows: ', rows);
+
       if (rows.length === 1) {
-        ctx.body = rows[0].id;
+        ctx.body = {
+          id: rows[0].id,
+          email: ctx.claims.email,
+          name: ctx.claims.name
+        };
         ctx.status = 200;
       } else {
         console.error('INVALID TOKEN!')

@@ -56,36 +56,25 @@ export const router = new Router({
 
 router.get('/', async ctx => {
   const { rows } = await pool.query(`
-      SELECT e.id, e.name, e.from, e.to, e.description, e.logo_url AS "logoUrl"
+      SELECT e.id, e.name, e.from, e.to, e.description, e.logo_url AS "logoUrl", e.account_id AS "accountId"
       FROM events e
-      JOIN accounts a ON(e.account_id = a.id)
-      WHERE a.email = $1
     `,
-    [ctx.claims.email]
   );
   ctx.body = rows;
 });
 
 router.post('/', async ctx => {
-  const accountId = ctx.claims.id;
-  if (!accountId) {
-    ctx.status = 401;
-    return ctx.body = {
-      code: 'INVALID_TOKEN',
-      message: 'Provided an invalid authorization token',
-    };
-  }
-  const { name, description, locationId } = ctx.request.body;
-
+  const { name, description, locationId, accountId } = ctx.request.body;
   let eventRows = null;
   try {
     const { rows } = await pool.query(`
       INSERT INTO events (name, description, location_id, account_id)
       VALUES ($1, $2, $3, $4)
-      RETURNING id, created, updated, version,
+      RETURNING id, created, updated, version, account_id,
                 number_of_presentations AS "numberOfPresentations",
                 maximum_number_of_attendees AS "maximumNumberOfAttendees"
     `, [name, description, locationId, accountId]);
+
     eventRows = rows;
   } catch (e) {
     console.error(e);
@@ -101,20 +90,8 @@ router.post('/', async ctx => {
     WHERE l.id = $1
   `, [locationId]);
 
-  const [{ id, created, updated, version, numberOfPresentations, maximumNumberOfAttendees }] = eventRows;
   ctx.status = 201;
-  ctx.body = {
-    name,
-    description,
-    locationId,
-    id,
-    created,
-    updated,
-    version,
-    numberOfPresentations,
-    maximumNumberOfAttendees,
-    location: locationRows[0],
-  };
+  ctx.body = eventRows;
 });
 
 router.get('/:id', async ctx => {

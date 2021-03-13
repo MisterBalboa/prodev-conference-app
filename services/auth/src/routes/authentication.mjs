@@ -10,15 +10,15 @@ export const router = new Router({
 
 router.post('/', async ctx => {
   let { token } = ctx.request.body;
+  console.log('AUTH - token received', token);
   try {
     try {
       ctx.claims = await verifyToken(token);
-      console.log('claims: ', ctx.claims);
       let { rows } = await pool.query(`
         SELECT id FROM accounts WHERE email = $1
       `, [ctx.claims.email]);
 
-      console.log('rows: ', rows);
+      console.log('select rows: ', rows);
 
       if (rows.length === 1) {
         ctx.body = {

@@ -10,7 +10,6 @@ export const router = new Router({
 
 router.post('/new_account', '/', async ctx => {
   let { name, email, password } = ctx.request.body;
-  console.log('new account: ', name, email, password);
   email = email.toLowerCase();
   const hash = await bcrypt.hash(password || '', 8);
   try {

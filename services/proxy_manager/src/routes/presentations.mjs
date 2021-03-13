@@ -1,5 +1,6 @@
 import { authorize } from '../security.mjs';
 import { trimProperty } from '../strings.mjs';
+import httpRequest from '../http_client.mjs';
 import Router from '@koa/router';
 
 const STATUSES = new Map();
@@ -28,22 +29,30 @@ router.get('/', async ctx => {
     };
   }
 
-  /*******************************************************/
-  // TODO: GET presentations request to conference service 
-  /*******************************************************/
-  // const { rows } = await pool.query(`
-  //   SELECT p.id, p.email, p.presenter_name AS "presenterName", p.company_name AS "companyName", p.title, p.synopsis, p.status_id AS "statusId"
-  //   FROM presentations p
-  //   JOIN events e ON (p.event_id = e.id)
-  //   JOIN accounts a ON (e.account_id = a.id)
-  //   WHERE a.id = $1
-  //   AND e.id = $2
-  // `, [ctx.claims.id, eventId])
-  const rows = [];
-  ctx.body = rows.map(p => ({
-    ...p,
-    status: STATUSES.get(p.statusId),
-  }));
+  const options = {
+    hostname: 'conference',
+    port: '80',
+    path: '/api/events/' + eventId + '/presentations',
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+
+  const rows = await httpRequest(options);
+
+  const aggregatedData = rows.map(function(p) {
+    return {
+      ...p,
+      status: STATUSES.get(p.statusId),
+      email: ctx.claims.email,
+      name: ctx.claims.name
+    }
+  });
+
+  console.log('aggregated presentations', aggregatedData);
+
+  ctx.body = aggregatedData;
 });
 
 router.post('/', async ctx => {
@@ -86,20 +95,22 @@ router.post('/', async ctx => {
   const accountId = ctx.claims.id;
 
   const { email, presenterName, companyName, title, synopsis } = ctx.request.body;
-  /*******************************************************/
-  // TODO: POST presentations request to conference service 
-  /*******************************************************/
-  // const { rows: presentationRows } = await pool.query(`
-  //   INSERT INTO presentations (email, presenter_name, company_name, title, synopsis, event_id)
-  //   SELECT $1, $2, $3, $4, $5, e.id
-  //   FROM events e
-  //   JOIN accounts a ON (e.account_id = a.id) 
-  //   WHERE e.id = $6
-  //   AND a.id = $7
-  //   RETURNING id, status_id AS "statusId"
-  // `, [email, presenterName, companyName, title, synopsis, eventId, accountId]);
 
-  const presentationRows = [];
+  const options = {
+    hostname: 'conference',
+    port: '80',
+    path: '/api/events/' + eventId + '/presentations',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+
+  const data = { email, presenterName, companyName, title, synopsis }
+
+  const record = await httpRequest(options, data);
+
+  const presentationRows = [ record ];
   if (presentationRows.length === 0) {
     ctx.status = 404;
     return ctx.body = {

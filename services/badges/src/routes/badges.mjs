@@ -1,4 +1,3 @@
-import { authorize, identify } from '../security.mjs';
 import { pool } from '../db/index.mjs';
 import qrcode from 'qrcode';
 import Router from '@koa/router';
@@ -6,23 +5,6 @@ import Router from '@koa/router';
 export const router = new Router({
   prefix: '/events/:eventId/badges',
 });
-
-export const mainRouter = new Router({
-  prefix: '/badges',
-});
-
-mainRouter.post('/', async ctx => {
-  console.log('badges route');
-  ctx.status = 200;
-
-  const { rows } = await pool.query(`
-    INSERT INTO badges VALUES (2, 'antonio@badges.com', 'antonio', 'booz', NULL, 3);
-  `)
-  return ctx.body = 'post create badge';
-});
-
-// router.use(authorize);
-router.use(identify);
 
 router.get('/', async ctx => {
   const { eventId } = ctx.params;
@@ -43,3 +25,18 @@ router.get('/', async ctx => {
     item.qrcode = await qrcode.toString(`${item.id}|${item.name}`);
   }
 });
+
+router.post('/', async ctx => {
+  try {
+    const { eventId } = ctx.params;
+    const { email, name, companyName } = ctx.request.body; 
+    const { rows } = await pool.query(`
+      INSERT INTO badges(email, name, company_name, event_id) VALUES ($1, $2, $3, $4);
+    `, [email, name, companyName, eventId]);
+    ctx.status = 201;
+    return ctx.body = 'badges created successfully';
+  } catch (err) {
+    console.log('something went wrong in badges db', err);  
+  }
+});
+

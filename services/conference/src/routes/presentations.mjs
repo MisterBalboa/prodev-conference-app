@@ -14,13 +14,18 @@ export const router = new Router({
 router.get('/', async ctx => {
   const { eventId } = ctx.params;
   const { rows } = await pool.query(`
-    SELECT p.id, p.email, p.presenter_name AS "presenterName", p.company_name AS "companyName", p.title, p.synopsis, p.status_id AS "statusId"
+    SELECT
+      p.id,
+      p.email,
+      p.presenter_name AS "presenterName",
+      p.company_name AS "companyName",
+      p.title,
+      p.synopsis,
+      p.status_id AS "statusId"
     FROM presentations p
     JOIN events e ON (p.event_id = e.id)
-    JOIN accounts a ON (e.account_id = a.id)
-    WHERE a.id = $1
-    AND e.id = $2
-  `, [ctx.claims.id, eventId])
+    WHERE e.id = $1
+  `, [eventId])
   ctx.body = rows.map(p => ({
     ...p,
     status: STATUSES.get(p.statusId),
@@ -29,10 +34,10 @@ router.get('/', async ctx => {
 
 router.post('/', async ctx => {
   const { eventId } = ctx.params;
-  v = await ctx.validator(ctx.params, {
+  let v = await ctx.validator(ctx.params, {
     eventId: 'required|integer',
   });
-  fails = await v.fails();
+  let fails = await v.fails();
   if (fails) {
     ctx.status = 400;
     return ctx.body = {
@@ -42,18 +47,14 @@ router.post('/', async ctx => {
     };
   }
 
-  const accountId = ctx.claims.id;
-
   const { email, presenterName, companyName, title, synopsis } = ctx.request.body;
   const { rows: presentationRows } = await pool.query(`
     INSERT INTO presentations (email, presenter_name, company_name, title, synopsis, event_id)
     SELECT $1, $2, $3, $4, $5, e.id
     FROM events e
-    JOIN accounts a ON (e.account_id = a.id) 
     WHERE e.id = $6
-    AND a.id = $7
     RETURNING id, status_id AS "statusId"
-  `, [email, presenterName, companyName, title, synopsis, eventId, accountId]);
+  `, [email, presenterName, companyName, title, synopsis, eventId]);
 
   if (presentationRows.length === 0) {
     ctx.status = 404;
@@ -79,47 +80,65 @@ router.post('/', async ctx => {
 router.put('/:id/approved', async ctx => {
   const { eventId } = ctx.params;
   const { id } = ctx.params;
+  const { accountId } = ctx.request.body;
 
-  const { rows } = await pool.query(`
-    UPDATE presentations
-    SET status_id = 2
-    WHERE id = $1
-    AND status_id IN (1, 2)
-    AND event_id IN (SELECT e.id FROM events e WHERE e.account_id = $2)
-    RETURNING email, presenter_name AS "presenterName", company_name AS "companyName", title, synopsis
-  `, [id, ctx.claims.id]);
-  if (rows.length === 0) {
-    ctx.status = 404;
-    return ctx.body = {
-      code: 'INVALID_IDENTIFIER',
-      message: 'Could not approve that presentation.'
-    };
+  var updatedPresentation;
+  try {
+    const { rows } = await pool.query(`
+      UPDATE presentations
+      SET status_id = 2
+      WHERE id = $1
+      AND status_id IN (1, 2)
+      AND event_id IN (SELECT e.id FROM events e WHERE e.account_id = $2)
+      RETURNING email, presenter_name AS "presenterName", company_name AS "companyName", title, synopsis
+    `, [id, accountId]);
+
+    if (rows.length === 0) {
+      ctx.status = 404;
+      return ctx.body = {
+        code: 'INVALID_IDENTIFIER',
+        message: 'Could not approve that presentation.'
+      };
+    }
+
+    updatedPresentation = rows[0];
+  } catch (err) {
+    ctx.status = 500;
+    console.log('catch err', err);
   }
 
-  const { email, presenterName, companyName, title, synopsis } = rows[0];
+  ctx.status = 204;
+
+  const { email, presenterName, companyName, title, synopsis } = updatedPresentation;
 
   // failing on conflict - event_id
-  await pool.query(`
-    INSERT INTO badges (email, name, company_name, role, event_id)
-    VALUES ($1, $2, $3, 'SPEAKER', $4)
-    ON CONFLICT (email)
-    DO
-    UPDATE SET role = 'SPEAKER'
-  `, [email, presenterName, companyName, eventId]);
+  // await pool.query(`
+  //   INSERT INTO badges (email, name, company_name, role, event_id)
+  //   VALUES ($1, $2, $3, 'SPEAKER', $4)
+  //   ON CONFLICT (email)
+  //   DO
+  //   UPDATE SET role = 'SPEAKER'
+  // `, [email, presenterName, companyName, eventId]);
 
-  ctx.body = {
-    id,
-    email,
-    presenterName,
-    companyName,
-    title,
-    synopsis,
-    status: STATUSES.get(2)
-  };
+  // ctx.body = {
+  //   id,
+  //   email,
+  //   presenterName,
+  //   companyName,
+  //   title,
+  //   synopsis,
+  //   status: STATUSES.get(2)
+  // };
 });
 
 router.put('/:id/rejected', async ctx => {
+  const { eventId } = ctx.params;
   const { id } = ctx.params;
+  const { accountId } = ctx.request.body;
+
+  console.log('event id', eventId);
+  console.log('id', id);
+  console.log('account id', account_id);
 
   const { rows } = await pool.query(`
     UPDATE presentations
@@ -127,8 +146,14 @@ router.put('/:id/rejected', async ctx => {
     WHERE id = $1
     AND status_id IN (1, 3)
     AND event_id IN (SELECT e.id FROM events e WHERE e.account_id = $2)
-    RETURNING email, presenter_name AS "presenterName", company_name AS "companyName", title, synopsis
-  `, [id, ctx.claims.id]);
+    RETURNING
+      email,
+      presenter_name AS "presenterName",
+      company_name AS "companyName",
+      title,
+      synopsis
+  `, [id, eventId]);
+
   if (rows.length === 0) {
     ctx.status = 404;
     return ctx.body = {

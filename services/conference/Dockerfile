@@ -1,4 +1,4 @@
-FROM node:current-alpine3.10 AS conference
+FROM node:current-alpine3.10 AS conference_image
 WORKDIR /usr/conference
 COPY . .
 

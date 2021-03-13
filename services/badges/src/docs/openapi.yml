@@ -68,8 +68,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
     post:
       tags:
       - events
@@ -93,8 +91,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/events/{id}:
     parameters:
     - name: id
@@ -116,8 +112,6 @@ paths:
                 oneOf:
                 - $ref: '#/components/schemas/Event'
                 - $ref: '#/components/schemas/Empty'
-      security:
-        - bearerAuth: []
     get:
       tags:
       - events
@@ -135,8 +129,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
     put:
       tags:
       - events
@@ -166,8 +158,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/events/{eventId}/attendees:
     parameters:
     - name: eventId
@@ -195,8 +185,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
     post:
       tags:
       - attendees
@@ -228,8 +216,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/events/{eventId}/badges:
     parameters:
     - name: eventId
@@ -257,8 +243,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/events/{eventId}/presentations:
     parameters:
     - name: eventId
@@ -286,8 +270,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
     post:
       tags:
       - presentations
@@ -313,8 +295,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/events/{eventId}/presentations/{id}/approved:
     parameters:
     - name: eventId
@@ -352,8 +332,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/events/{eventId}/presentations/{id}/rejected:
     parameters:
     - name: eventId
@@ -391,8 +369,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/locations:
     get:
       tags:
@@ -413,8 +389,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
     post:
       tags:
       - locations
@@ -446,8 +420,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-      security:
-        - bearerAuth: []
   /api/session:
     put:
       tags:
@@ -790,8 +762,3 @@ components:
                 decidedOn:
                   type: string
                   format: date-time
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT 

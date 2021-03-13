@@ -1,4 +1,5 @@
 import http from 'http';
+import CircuitBreaker from 'opossum';
 import Router from '@koa/router';
 import axios from 'axios';
 import { trimProperty } from '../strings.mjs';
@@ -6,6 +7,12 @@ import { trimProperty } from '../strings.mjs';
 export const router = new Router({
   prefix: '/accounts',
 });
+
+const options = {
+  timeout: 3000, // If our function takes longer than 3 seconds, trigger a failure
+  errorThresholdPercentage: 50, // When 50% of requests fail, trip the circuit
+  resetTimeout: 30000 // After 30 seconds, try again.
+};
 
 var postRequest = async function(options, data) {
   return new Promise(function(resolve, reject) {
@@ -24,6 +31,8 @@ var postRequest = async function(options, data) {
     req.end()
   });
 }
+
+const breaker = new CircuitBreaker(postRequest, options);
 
 router.post('new_account', '/', async ctx => {
   trimProperty(ctx.request.body, 'name');
@@ -58,9 +67,11 @@ router.post('new_account', '/', async ctx => {
     }
     const data = { name, email, password };
 
-    const response = await postRequest(options, data); 
+
+    const response = await breaker.fire(options, data)
+    console.log('circuit breaker then result', response);
     ctx.status = 201;
-    ctx.body = { token: response.token };
+    ctx.body = { status: ctx.status, token: response.token };
   } catch (e) {
     console.error(e);
     ctx.status = 400;

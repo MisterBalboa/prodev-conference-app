@@ -1,6 +1,7 @@
 import { pool } from '../db/index.mjs';
 import { trimProperty } from '../strings.mjs';
 import Router from '@koa/router';
+import httpClient from '../httpClient.mjs';
 
 export const router = new Router({
   prefix: '/events/:eventId/attendees',
@@ -20,18 +21,22 @@ router.get('/', async ctx => {
 });
 
 router.post('/', async ctx => {
+  console.log('post attendees', ctx.request.body);
   const { eventId } = ctx.params;
-  const accountId = ctx.claims.id;
   const { email, name, companyName } = ctx.request.body;
-  const { rows: attendeesRows } = await pool.query(`
+
+  const { id, created } = await pool.query(`
     INSERT INTO attendees (name, email, company_name, event_id)
-    SELECT $1, $2, $3, e.id
-    FROM events e
-    JOIN accounts a ON (e.account_id = a.id) 
-    WHERE e.id = $4
-    AND a.id = $5
+    VALUES ($1, $2, $3, $4)
     RETURNING id, created
-  `, [email, name, companyName, eventId, accountId]);
+  `, [name, email, companyName, eventId]);
+
+  const { rows: attendeesRows } = await pool.query(`
+    SELECT id, created FROM attendees
+    WHERE event_id = $1 
+  `, [eventId]);
+
+  console.log('attendees rows: ', attendeesRows);
 
   if (attendeesRows.length === 0) {
     ctx.status = 404;
@@ -41,22 +46,34 @@ router.post('/', async ctx => {
     };
   }
 
-  // This is failing with event_id -- there is no unique or exclusion constraint matching the ON CONFLICT specification --
-  // ON CONFLICT (email, event_id)
-  await pool.query(`
-    INSERT INTO badges (email, name, company_name, role, event_id)
-    VALUES ($1, $2, $3, '', $4)
-    ON CONFLICT (email)
-    DO NOTHING
-  `, [email, name, companyName, eventId]);
-
-  const { id, created } = attendeesRows[0];
   ctx.status = 201;
   ctx.body = {
-    id,
+    id: eventId,
     email,
     name,
     companyName,
     created,
   };
+
+  try {
+    const options = {
+      hostname: 'badges',
+      port: '80',
+      path: '/api/events/' + eventId +  '/badges',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+
+    const data = {
+      id: eventId,
+      name, email,
+      companyName
+    };
+
+    httpClient(options, data); 
+  } catch (err) {
+    console.log('call to badges failed', err);  
+  }
 });

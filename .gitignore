@@ -2,3 +2,4 @@ services/auth/node_modules/
 services/badges/node_modules/
 services/conference/node_modules/
 services/proxy_manager/node_modules/
+services/frontend/node_modules/

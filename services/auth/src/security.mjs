@@ -18,6 +18,7 @@ export function signToken(claims) {
 }
 
 export function verifyToken(token) {
+  console.log('verify token: ', token, secret);
   return jwt.verify(token, secret);
 }
 

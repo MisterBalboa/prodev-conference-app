@@ -60,6 +60,7 @@ export async function authorize(ctx, next) {
       ctx.claims = response;
       await next();
     } catch (e) {
+      ctx.status = 401;
       console.error('INVALID TOKEN!')
       console.error(e);
     }

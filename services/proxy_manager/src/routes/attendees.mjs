@@ -1,5 +1,6 @@
 import { trimProperty } from '../strings.mjs';
 import Router from '@koa/router';
+import httpRequest from '../http_client.mjs';
 
 export const router = new Router({
   prefix: '/events/:eventId/attendees',
@@ -72,19 +73,19 @@ router.post('/', async ctx => {
 
   const { email, name, companyName } = ctx.request.body;
 
-  /************************************************/
-  // TODO: CALL TO CONFERENCE SERVICE POST attendee
-  /************************************************/
-  //  const { rows: attendeesRows } = await pool.query(`
-  //    INSERT INTO attendees (name, email, company_name, event_id)
-  //    SELECT $1, $2, $3, e.id
-  //    FROM events e
-  //    JOIN accounts a ON (e.account_id = a.id) 
-  //    WHERE e.id = $4
-  //    AND a.id = $5
-  //    RETURNING id, created
-  //  `, [email, name, companyName, eventId, accountId]);
-  const attendeesRows = [];
+  const options = {
+    hostname: 'conference',
+    port: '80',
+    path: '/api/events/' + eventId + '/attendees/',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+
+  const attendeesRows = await httpRequest(options, { name, email, companyName, accountId });
+
+  console.log('attendees rows: ', attendeesRows);
 
   if (attendeesRows.length === 0) {
     ctx.status = 404;
@@ -93,16 +94,6 @@ router.post('/', async ctx => {
       message: 'Could not find an event with that id to add an attendee to'
     };
   }
-
-  /***********************************************************/
-  // TODO: CALL TO badges SERVICE POST badge (fire and forget)
-  /***********************************************************/
-  // const { rows: attendeesRows } = await pool.query(`
-  //   INSERT INTO badges (email, name, company_name, role, event_id)
-  //   VALUES ($1, $2, $3, '', $4)
-  //   ON CONFLICT (email)
-  //   DO NOTHING
-  // `, [email, name, companyName, eventId]);
 
   const { id, created } = attendeesRows[0];
   ctx.status = 201;

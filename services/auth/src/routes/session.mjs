@@ -34,7 +34,10 @@ router.put('new_session', '/', async ctx => {
   } else {
     hash = rows[0].hashed_password;
   }
+
+  console.log('name and email', rows[0].name, email);
   const good = await bcrypt.compare(password, hash) && rows.length === 1;
+
   if (good) {
     const token = jwt.sign({ name: rows[0].name, email }, secret);
     ctx.status = 201;

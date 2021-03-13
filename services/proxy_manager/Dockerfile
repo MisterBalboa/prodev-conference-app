@@ -1,4 +1,4 @@
-FROM node:current-alpine3.10 as proxy_manager
+FROM node:current-alpine3.10 as proxy_manager_image
 WORKDIR /usr/proxy_manager
 COPY . .
 COPY ./.vimrc /root

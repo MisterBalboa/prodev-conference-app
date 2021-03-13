@@ -1,4 +1,4 @@
-FROM node:current-alpine3.10 AS auth
+FROM node:current-alpine3.10 AS auth_image
 WORKDIR /usr/auth
 COPY . .
 
